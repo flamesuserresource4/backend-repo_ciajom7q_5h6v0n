@@ -1,48 +1,53 @@
 """
-Database Schemas
+Database Schemas for the Niche Perfume Collection
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model corresponds to a MongoDB collection. The collection name is the lowercase of the class name.
 """
+from typing import List, Optional
+from pydantic import BaseModel, Field, HttpUrl
 
-from pydantic import BaseModel, Field
-from typing import Optional
 
-# Example schemas (replace with your own):
+class Fragrance(BaseModel):
+    """Fragrance (product) documents. Collection name: "fragrance"""
+    name: str = Field(..., description="Display name of the fragrance")
+    slug: str = Field(..., description="URL-friendly unique identifier")
+    variant: Optional[str] = Field(None, description="Edition or special variant (e.g., Collector's Edition)")
+    description: str = Field(..., description="Brand storytelling and mythology")
+    mythology: Optional[str] = Field(None, description="Mythological background")
+    top_notes: List[str] = Field(default_factory=list)
+    heart_notes: List[str] = Field(default_factory=list)
+    base_notes: List[str] = Field(default_factory=list)
+    price: float = Field(..., ge=0)
+    currency: str = Field("USD")
+    volume_ml: int = Field(50, ge=1)
+    color_hex: Optional[str] = Field(None, description="Primary color accent for UI (e.g., #A10808)")
+    sku: Optional[str] = None
+    images: List[str] = Field(default_factory=list, description="Image URLs")
+    spline_url: Optional[HttpUrl] = Field(None, description="3D visualization scene URL (Spline)")
+    in_stock: bool = Field(True)
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Testimonial(BaseModel):
+    """Social proof quotes. Collection name: "testimonial"""
+    author: str
+    quote: str
+    source: Optional[str] = None
+    rating: Optional[float] = Field(None, ge=0, le=5)
 
-# Add your own schemas here:
-# --------------------------------------------------
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Subscriber(BaseModel):
+    """Newsletter subscribers. Collection name: "subscriber"""
+    email: str
+    tagged_source: Optional[str] = Field(None, description="Where the signup came from")
+
+
+class CartItem(BaseModel):
+    slug: str
+    quantity: int = Field(1, ge=1)
+
+
+class Cart(BaseModel):
+    """Shopping carts keyed by a session identifier. Collection name: "cart"""
+    session_id: str
+    items: List[CartItem] = Field(default_factory=list)
+    currency: str = Field("USD")
